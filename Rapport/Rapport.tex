@@ -8,6 +8,7 @@
 \usepackage{xspace}
 \usepackage{subfig}
 \usepackage{amsmath}
+\usepackage{amsfonts}
 
 \usepackage{geometry}
 \geometry{hmargin=3.5cm,vmargin=2.5cm}
@@ -44,6 +45,8 @@
 \date{\today}
 \maketitle
 
+\tableofcontents
+
 \section*{Notation}
 On notera pour $p>0$ un réel, $X$ un vecteur et $M$ une matrice quelconque : \[
 	\norme{X}{p} = \pp{\sum_i \left|x_i\right|^p}^{\frac{1}{p}} \hspace{2cm} 
@@ -68,6 +71,7 @@ On prendra comme mesure d'approximation, l'erreur moyenne suivante :
 \]
 
 \section{Approximation basique}
+\subsection{Par moyenne}
 
 On considère ici l'approximation suivante : \[
 \Apc{i}{j} = m_{\Ap} + p_i + o_j
@@ -78,7 +82,56 @@ Avec $m_{\Ap}$ la moyenne des valeurs de $\Ap$, $p_i$ la moyenne des notes recen
 	o_j = \frac{\sum_{i}\Bc{i}{j} - m_{\Ap}}{\norme{\B\ei{j}}{0}}
 \]
 
+\subsection{Par minimisation de problème convexe}
 
+De manière plus précise, on peut résoudre le problème suivant de minimisation convexe pénalisé sur les $p_i$ et $o_j$ pour trouver des $p_i$ et $o_j$ plus adaptés : \[
+	\mathcal{P}\pp{p,\:o} = \sum_{i,j} \pp{\Ac{i}{j} - m_{\Ap} + p_i + o_j}^2 + \lambda\pp{\norme{o}{1} + \norme{p}{1}}
+\]
+Problème que l'on peut écrire : \[
+	\mathcal{P}\pp{x} = \norme{Mx + b}{2}^2 + \lambda\norme{x}{1}
+\]
+Il suffit alors de résoudre ce problème, pour un $\lambda$ donné et de calculer l'approximation.
+
+\section{Approximation par voisininage}
+
+Nous noterons par la suite $P_i$ la $i$-ième colonne de $\tr{B}$, représentant la personne $i$ et $O_j$ la $j$-ième colonne de $\B$, représentant l'objet $j$.
+
+\subsection{Plus proche voisin}
+
+La méthode précédente suppose qu'il n'existe qu'un seul type de personne et d'objet : un objet est bien ou mauvais dans l'ensemble et une personne donne de manière générale des notes bonnes ou des notes mauvaises. Ceci apparaît comme très naif.
+\nl
+
+On considère ici une méthode différente. Pour une personne $i$ et un objet $j$ dont l'information est manquante, nous allons chercher parmis les personnes ayant noté $j$ celui qui se rapproche le plus $i$ ainsi que l'objet ayant été noté par $i$ celui qui se rapproche le plus de $j$. En notant $i_0$ et $j_0$ respectivement la personne et l'objet trouvé, on peut alors prendre comme approximation la moyenne des deux notes : $\Apc{i}{j} = \frac{1}{2}\pp{\Ac{i_0}{j} + \Ac{i}{j_0}}$.
+
+\nl
+Il reste à définir comment sélectionner le plus proche voisin. Si on cherche le plus proche voisin d'un vecteur $X$ de support $S$ parmis un ensemble de vecteur $E$, on considèrera $E_{|S}$ les vecteurs de $E$ restreints au support $S$ et on prendra alors le plus proche voisin pour la norme euclidienne sur $\mathbb{R}^{\mathrm{Card}\pp{S}}$.
+
+\subsection{$k$ plus proches voisins}
+
+\subsection{Voisinage}
+
+On ne cherche plus ici le plus proche voisin, mais une combinaison de la note donnée par les personne ayant noté l'objet en question, et ce en fonction de leur ressemblance avec la personne initiale.
+\nl
+Il convient de donner une mesure de ressemblance entre deux personnes $i_1$ et $i_2$, que l'on notera $s\pp{i_0,\:j_0}$.
+Nous prendrons ici la valeur du cosinus de l'angle entre les deux personnes : \[
+	s\pp{i_1,\:i_2} = \max\pp{\frac{\tr{P_{i_1}}\!\cdot\!P_{i_2}}{\norme{P_{i_1}}{2}\norme{P_{i_2}}{2}},\:0}
+\]
+On prendra alors comme approximation : \[
+	\Apc{i}{j} = \frac{\underset{^{i_0\neq i}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i_0}{j}}}%
+				{\underset{^{i_0\neq i}}{\sum}s\pp{i_0,\:i}}
+\]
+
+
+\section{Décomposition en valeurs singulières}
+
+Le but est ici de faire apparaître $k$ modèles de personnes, dont toutes les autres seront des combinaisons linéaires.
+
+Autrement dit, on souhaite faire apparaître la matrice $\Ap$ de la manière suivante : \[
+	\Ap = P\cdot O
+\]
+avec $P \in \mathcal{M}_{n,\:k}\pp{\mathbb{R}}$ de colonnes libres que l'on peut prendre orthonormées et $O \in \mathcal{M}_{k,\:m}\pp{\mathbb{R}}$.
+
+On peut facilement accéder à une telle décomposition à l'aide de la décomposition en valeurs singulières que l'on tronque à l'ordre $k$.
 
 
 \end{document}
