@@ -1,0 +1,84 @@
+\documentclass[10pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}  
+\usepackage[T1]{fontenc}  
+\usepackage[francais]{babel}
+
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{subfig}
+\usepackage{amsmath}
+
+\usepackage{geometry}
+\geometry{hmargin=3.5cm,vmargin=2.5cm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% Notations %%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\A}{A} % matrice complète
+\newcommand{\B}{B} % matrice incomplète
+\newcommand{\Ap}{\widehat{A}} % matrice approximée
+
+\newcommand{\Ac}[2]{a_{#1,#2}} % matrice complète composante
+\newcommand{\Bc}[2]{b_{#1,#2}} % matrice incomplète composante
+\newcommand{\Apc}[2]{\widehat{a}_{#1,#2}} % matrice approximée composante
+
+\newcommand{\rmse}[1]{\mathrm{RMSE}\pp{#1}} % root mean square error
+\newcommand{\norme}[2]{\left\lVert #1 \right\rVert_{#2}} % norme
+\newcommand{\tnorme}[2]{\left|\hspace{-1pt}\left\lVert #1 \right\rVert\hspace{-1pt}\right|_{#2}} % norme
+
+\newcommand{\tr}[1]{#1^{\mathrm{T}}} % Trace
+\newcommand{\ei}[1]{\mathrm{e}_i} % Vecteur de base
+
+%raccoursis
+\newcommand{\pp}[1]{\left(#1\right)} % parenthèses
+\newcommand{\nl}{
+
+~
+
+} % saute de line
+%%%%%%%%%%%%%%%%%%%%%%%%%% Notations %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\title{Recommandation - Rapport partiel}
+\author{Ken Chanseau--Saint-Germain \& Vincent Vidal}
+\date{\today}
+\maketitle
+
+\section*{Notation}
+On notera pour $p>0$ un réel, $X$ un vecteur et $M$ une matrice quelconque : \[
+	\norme{X}{p} = \pp{\sum_i \left|x_i\right|^p}^{\frac{1}{p}} \hspace{2cm} 
+	\norme{M}{p} = \pp{\sum_{i, j} \left|m_{i,j}\right|^p}^{\frac{1}{p}}
+\]\[
+	\tnorme{M}{p} = \sup_{\norme{x}{p}=1} \norme{Mx}{p}
+\]
+Et on posera $\norme{X}{0}$ le nombre de composantes non nulles de $X$. 
+
+\section{Introduction}
+
+On se donne ici $n$ personnes donnant des notes à $m$ objets.\newline
+On notera $\Ac{i}{j}$ la note de l'individu $i$ sur l'objet $j$ ainsi que $A = \pp{\Ac{i}{j}}_{\substack{1\leq i\leq n \\ 1 \leq j \leq m}}$ la matrice des notes.
+
+On suppose ici que l'on a accès qu'à une matrice incomplète $\B$ obtenu en annulant certaines composantes de $A$. Le but est alors de trouver une bonne approximation $\Ap$ de $A$ à partir de $\B$.
+
+\nl
+
+On prendra comme mesure d'approximation, l'erreur moyenne suivante :
+\[
+	\rmse{\Ap} = \norme{A-\Ap}{2} = \sqrt{\sum_{i,j} \pp{\Ac{i}{j} - \Apc{i}{j}}^2}
+\]
+
+\section{Approximation basique}
+
+On considère ici l'approximation suivante : \[
+\Apc{i}{j} = m_{\Ap} + p_i + o_j
+\]
+Avec $m_{\Ap}$ la moyenne des valeurs de $\Ap$, $p_i$ la moyenne des notes recentrées qu'a donné la personne $i$ et $o_j$ la moyenne des notes recentrées qu'a obtenu l'objet $j$. C'est à dire : \[
+	m_{\Ap} = \frac{\sum_{i,j}\Bc{i}{j}}{\norme{\B}{0}}  \hspace{1cm}
+	p_i = \frac{\sum_{j}\Bc{i}{j} - m_{\Ap}}{\norme{\tr{\B}\ei{i}}{0}} \hspace{1cm}
+	o_j = \frac{\sum_{i}\Bc{i}{j} - m_{\Ap}}{\norme{\B\ei{j}}{0}}
+\]
+
+
+
+
+\end{document}
