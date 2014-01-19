@@ -58,6 +58,8 @@ On notera pour $p>0$ un réel, $X$ un vecteur et $M$ une matrice quelconque : \[
 \]
 Et on posera $\norme{X}{0}$ le nombre de composantes non nulles de $X$. 
 
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
 On se donne ici $n$ personnes donnant des notes à $m$ objets.\newline
@@ -72,18 +74,19 @@ On prendra comme mesure d'approximation, l'erreur moyenne suivante :
 	\rmse{\Ap} = \norme{A-\Ap}{2} = \sqrt{\sum_{i,j} \pp{\Ac{i}{j} - \Apc{i}{j}}^2}
 \]
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Approximation basique}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Par moyenne}
 
-On considère ici l'approximation suivante : \[
-\Apc{i}{j} = m_{\Ap} + p_i + o_j
-\]
+On suppose ici que la note d'un objet est de la forme $\Apc{i}{j} = m_{\Ap} + p_i + o_j$.
 Avec $m_{\Ap}$ la moyenne des valeurs de $\Ap$, $p_i$ la moyenne des notes recentrées qu'a donné la personne $i$ et $o_j$ la moyenne des notes recentrées qu'a obtenu l'objet $j$. C'est à dire : \[
 	m_{\Ap} = \frac{\sum_{i,j}\Bc{i}{j}}{\norme{\B}{0}}  \hspace{1cm}
 	p_i = \frac{\sum_{j}\Bc{i}{j} - m_{\Ap}}{\norme{\tr{\B}\ei{i}}{0}} \hspace{1cm}
 	o_j = \frac{\sum_{i}\Bc{i}{j} - m_{\Ap}}{\norme{\B\ei{j}}{0}}
 \]
 
+% vvvvvvvvvvvvvvvvvvvv %
 \begin{algorithm}[H]
 \KwData{La matrice incomplète $\B$.}
 \KwResult{La matrice d'approximation $\Ap$.}
@@ -105,7 +108,9 @@ On calcul de même les $o\left[j\right]$\;
 \Return{$\Ap$}\;
  \caption{Recommandations naives par moyenne}
 \end{algorithm}
+% ^^^^^^^^^^^^^^^^^^^^ %
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Par minimisation de problème convexe}
 
 De manière plus précise, on peut résoudre le problème suivant de minimisation convexe pénalisé sur les $p_i$ et $o_j$ pour trouver des $p_i$ et $o_j$ plus adaptés : \[
@@ -114,10 +119,11 @@ De manière plus précise, on peut résoudre le problème suivant de minimisatio
 Problème que l'on peut écrire : \[
 	\mathcal{P}\pp{x} = \norme{Mx + b}{2}^2 + \lambda\norme{x}{1}
 \]
-Il suffit alors de résoudre ce problème, pour un $\lambda$ donné et de calculer l'approximation. 
-
-On utilisera ici un algorithme présenté dans \cite{mallat} :
-
+Il suffit alors de résoudre ce problème, pour un $\lambda$ donné et de calculer l'approximation à partir des coefficients $p_i$ et $o_j$ obtenus. 
+\sdl
+On utilisera ici un algorithme de minimisation présenté dans \cite{mallat}, se rapprochant d'une méthode de descente de gradient. Cet algorithme prend un paramètre supplémentaire, $\mu$, dont dépend la vitesse de convergence. La suite calculée par cet algorithme converge vers un minimum lorsque $\mu$ est suffisamment proche de $0$.
+\sdl
+% vvvvvvvvvvvvvvvvvvvv %
 \begin{algorithm}[H]
 \KwData{$x$, $\lambda$, le nombre d'itération $N$ et un paramètre $\mu$.}
 \KwResult{une meilleur approximation $x$.}
@@ -132,11 +138,14 @@ $x\left[i\right]\longleftarrow \mathrm{signe}\pp{x\left[i\right]}.\max\pp{\:\lef
 \Return{$x$}\;
  \caption{Minimisation convexe}
 \end{algorithm}
+% ^^^^^^^^^^^^^^^^^^^^ %
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Approximation par voisininage}
 
 Nous noterons par la suite $P_i$ la $i$-ième colonne de $\tr{B}$, représentant la personne $i$ et $O_j$ la $j$-ième colonne de $\B$, représentant l'objet $j$.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Plus proche voisin}
 
 La méthode précédente suppose qu'il n'existe qu'un seul type de personne et d'objet : un objet est bien ou mauvais dans l'ensemble et une personne donne de manière générale des notes bonnes ou des notes mauvaises. Ceci apparaît comme très naif.
@@ -147,8 +156,10 @@ On considère ici une méthode différente. Pour une personne $i$ et un objet $j
 \sdl
 Il reste à définir comment sélectionner le plus proche voisin. Si on cherche le plus proche voisin d'un vecteur $X$ de support $S$ parmis un ensemble de vecteur $E$, on considèrera $E_{|S}$ les vecteurs de $E$ restreints au support $S$ et on prendra alors le plus proche voisin pour la norme euclidienne sur $\mathbb{R}^{\mathrm{Card}\pp{S}}$.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{$k$ plus proches voisins}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Voisinage}
 
 On ne cherche plus ici le plus proche voisin, mais une combinaison de la note donnée par les personne ayant noté l'objet en question, et ce en fonction de leur ressemblance avec la personne initiale.
@@ -162,7 +173,7 @@ On prendra alors comme approximation : \[
 				{\underset{^{i_0\neq i}}{\sum}s\pp{i_0,\:i}}
 \]
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Décomposition en valeurs singulières}
 
 Le but est ici de faire apparaître $k$ modèles de personnes, dont toutes les autres seront des combinaisons linéaires.
@@ -172,9 +183,25 @@ Autrement dit, on souhaite faire apparaître la matrice $\Ap$ de la manière sui
 \]
 avec $P \in \mathcal{M}_{n,\:k}\pp{\mathbb{R}}$ de colonnes libres que l'on peut prendre orthonormées et $O \in \mathcal{M}_{k,\:m}\pp{\mathbb{R}}$.
 
-On peut facilement accéder à une telle décomposition à l'aide de la décomposition en valeurs singulières que l'on tronque à l'ordre $k$.
+On peut facilement accéder à une telle décomposition à l'aide de la décomposition en valeurs singulières.
 
+\sdl
+% vvvvvvvvvvvvvvvvvvvv %
+\begin{algorithm}[H]
+\KwData{La matrice $\B$ et un entier $k$.}
+\KwResult{La matrice approchée $\Ap$.}
 
+$\left[ U,\: S,\: V\right] \longleftarrow \mathrm{SVD}\pp{\B}$\;
+\For{$i\in\segint{k}{\mathrm{size}\pp{S}}$}{
+$S\left[i,\:i\right] \longleftarrow 0$\;
+}
+$\Ap \longleftarrow U S \tr{V}$\;
+\Return{$\Ap$}\;
+ \caption{Recommandation par décomposition en valeurs singulières}
+\end{algorithm}
+% ^^^^^^^^^^^^^^^^^^^^ %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
 \nocite{*}
 \bibliographystyle{alpha}
 \bibliography{bibliographie}
