@@ -1,0 +1,209 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}  
+\usepackage[T1]{fontenc}  
+\usepackage[francais]{babel}
+
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{subfig}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage[ruled,vlined]{algorithm2e}
+
+\usepackage{geometry}
+\geometry{hmargin=3.5cm,vmargin=3.5cm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% Notations %%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\A}{A} % matrice complète
+\newcommand{\B}{B} % matrice incomplète
+\newcommand{\Ap}{\widehat{A}} % matrice approximée
+
+\newcommand{\Ac}[2]{a_{#1,#2}} % matrice complète composante
+\newcommand{\Bc}[2]{b_{#1,#2}} % matrice incomplète composante
+\newcommand{\Apc}[2]{\widehat{a}_{#1,#2}} % matrice approximée composante
+
+\newcommand{\rmse}[1]{\mathrm{RMSE}\pp{#1}} % root mean square error
+\newcommand{\norme}[2]{\left\lVert #1 \right\rVert_{#2}} % norme
+\newcommand{\tnorme}[2]{\left|\hspace{-1pt}\left\lVert #1 \right\rVert\hspace{-1pt}\right|_{#2}} % norme
+
+\newcommand{\tr}[1]{#1^{\mathrm{T}}} % Trace
+\newcommand{\segint}[2]{\left[\!\left[#1,\: #2\right]\!\right]} % Trace
+\newcommand{\ei}[1]{\mathrm{e}_i} % Vecteur de base
+
+%raccoursis
+\newcommand{\pp}[1]{\left(#1\right)} % parenthèses
+\newcommand{\sdl}{
+
+~
+
+} % saute de line
+%%%%%%%%%%%%%%%%%%%%%%%%%% Notations %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\title{Recommandation - Rapport partiel}
+\author{Ken Chanseau--Saint-Germain \& Vincent Vidal}
+\date{\today}
+\maketitle
+
+\tableofcontents
+
+\section*{Notation}
+On notera pour $p>0$ un réel, $X$ un vecteur et $M$ une matrice quelconque : \[
+	\norme{X}{p} = \pp{\sum_i \left|x_i\right|^p}^{\frac{1}{p}} \hspace{2cm} 
+	\norme{M}{p} = \pp{\sum_{i, j} \left|m_{i,j}\right|^p}^{\frac{1}{p}}
+\]\[
+	\tnorme{M}{p} = \sup_{\norme{x}{p}=1} \norme{Mx}{p}
+\]
+Et on posera $\norme{X}{0}$ le nombre de composantes non nulles de $X$. 
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+On se donne ici $n$ personnes donnant des notes à $m$ objets.\newline
+On notera $\Ac{i}{j}$ la note de l'individu $i$ sur l'objet $j$ ainsi que $A = \pp{\Ac{i}{j}}_{\substack{1\leq i\leq n \\ 1 \leq j \leq m}}$ la matrice des notes.
+
+On suppose ici que l'on a accès qu'à une matrice incomplète $\B$ obtenu en annulant certaines composantes de $A$. Le but est alors de trouver une bonne approximation $\Ap$ de $A$ à partir de $\B$.
+
+\sdl
+
+On prendra comme mesure d'approximation, l'erreur moyenne suivante :
+\[
+	\rmse{\Ap} = \norme{A-\Ap}{2} = \sqrt{\sum_{i,j} \pp{\Ac{i}{j} - \Apc{i}{j}}^2}
+\]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Approximation basique}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Par moyenne}
+
+On suppose ici que la note d'un objet est de la forme $\Apc{i}{j} = m_{\Ap} + p_i + o_j$.
+Avec $m_{\Ap}$ la moyenne des valeurs de $\Ap$, $p_i$ la moyenne des notes recentrées qu'a donné la personne $i$ et $o_j$ la moyenne des notes recentrées qu'a obtenu l'objet $j$. C'est à dire : \[
+	m_{\Ap} = \frac{\sum_{i,j}\Bc{i}{j}}{\norme{\B}{0}}  \hspace{1cm}
+	p_i = \frac{\sum_{j}\Bc{i}{j} - m_{\Ap}}{\norme{\tr{\B}\ei{i}}{0}} \hspace{1cm}
+	o_j = \frac{\sum_{i}\Bc{i}{j} - m_{\Ap}}{\norme{\B\ei{j}}{0}}
+\]
+
+% vvvvvvvvvvvvvvvvvvvv %
+\begin{algorithm}[H]
+\KwData{La matrice incomplète $\B$.}
+\KwResult{La matrice d'approximation $\Ap$.}
+$m \longleftarrow \mathrm{mean}\pp{\B}$\;
+\For{$i\in\segint{1}{n}$}{
+	$p\left[i\right]\longleftarrow 0$\;
+	$card\longleftarrow 0$\;
+\For{$j\in\segint{1}{m}$}{
+	$p\left[i\right]\longleftarrow p\left[i\right] + \B\left[i,\: j\right]$\;
+	\If{$b\left[i,\: j\right]\neq 0$}{$card\longleftarrow card + 1$\;}
+}
+$p\left[i\right]\longleftarrow p\left[i\right]/card - m$\;
+}
+On calcul de même les $o\left[j\right]$\;
+\For{$i\in\segint{1}{n}$}{
+\For{$j\in\segint{1}{m}$}{
+	$\Ap\left[i,\: j\right] \longleftarrow m + p\left[i\right] + o\left[j\right]$\;
+}}
+\Return{$\Ap$}\;
+ \caption{Recommandations naives par moyenne}
+\end{algorithm}
+% ^^^^^^^^^^^^^^^^^^^^ %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Par minimisation de problème convexe}
+
+De manière plus précise, on peut résoudre le problème suivant de minimisation convexe pénalisé sur les $p_i$ et $o_j$ pour trouver des $p_i$ et $o_j$ plus adaptés : \[
+	\mathcal{P}\pp{p,\:o} = \sum_{i,j} \pp{\Ac{i}{j} - m_{\Ap} + p_i + o_j}^2 + \lambda\pp{\norme{o}{1} + \norme{p}{1}}
+\]
+Problème que l'on peut écrire : \[
+	\mathcal{P}\pp{x} = \norme{Mx + b}{2}^2 + \lambda\norme{x}{1}
+\]
+Il suffit alors de résoudre ce problème, pour un $\lambda$ donné et de calculer l'approximation à partir des coefficients $p_i$ et $o_j$ obtenus. 
+\sdl
+On utilisera ici un algorithme de minimisation présenté dans \cite{mallat}, se rapprochant d'une méthode de descente de gradient. Cet algorithme prend un paramètre supplémentaire, $\mu$, dont dépend la vitesse de convergence. La suite calculée par cet algorithme converge vers un minimum lorsque $\mu$ est suffisamment proche de $0$.
+\sdl
+% vvvvvvvvvvvvvvvvvvvv %
+\begin{algorithm}[H]
+\KwData{$x$, $\lambda$, le nombre d'itération $N$ et un paramètre $\mu$.}
+\KwResult{une meilleur approximation $x$.}
+
+\For{$k\in\segint{1}{N}$}{
+$x\longleftarrow x - \mu.\tr{M}\pp{Mx-b}$\;
+	\tcc{Seuillage doux sur chaque composante}
+\For{$i\in\segint{1}{n}$}{
+$x\left[i\right]\longleftarrow \mathrm{signe}\pp{x\left[i\right]}.\max\pp{\:\left|x\left[i\right]\right| - \mu\lambda,\:0\:}$\;
+}
+}
+\Return{$x$}\;
+ \caption{Minimisation convexe}
+\end{algorithm}
+% ^^^^^^^^^^^^^^^^^^^^ %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Approximation par voisininage}
+
+Nous noterons par la suite $P_i$ la $i$-ième colonne de $\tr{B}$, représentant la personne $i$ et $O_j$ la $j$-ième colonne de $\B$, représentant l'objet $j$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Plus proche voisin}
+
+La méthode précédente suppose qu'il n'existe qu'un seul type de personne et d'objet : un objet est bien ou mauvais dans l'ensemble et une personne donne de manière générale des notes bonnes ou des notes mauvaises. Ceci apparaît comme très naif.
+\sdl
+
+On considère ici une méthode différente. Pour une personne $i$ et un objet $j$ dont l'information est manquante, nous allons chercher parmis les personnes ayant noté $j$ celui qui se rapproche le plus $i$ ainsi que l'objet ayant été noté par $i$ celui qui se rapproche le plus de $j$. En notant $i_0$ et $j_0$ respectivement la personne et l'objet trouvé, on peut alors prendre comme approximation la moyenne des deux notes : $\Apc{i}{j} = \frac{1}{2}\pp{\Ac{i_0}{j} + \Ac{i}{j_0}}$.
+
+\sdl
+Il reste à définir comment sélectionner le plus proche voisin. Si on cherche le plus proche voisin d'un vecteur $X$ de support $S$ parmis un ensemble de vecteur $E$, on considèrera $E_{|S}$ les vecteurs de $E$ restreints au support $S$ et on prendra alors le plus proche voisin pour la norme euclidienne sur $\mathbb{R}^{\mathrm{Card}\pp{S}}$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{$k$ plus proches voisins}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Voisinage}
+
+On ne cherche plus ici le plus proche voisin, mais une combinaison de la note donnée par les personne ayant noté l'objet en question, et ce en fonction de leur ressemblance avec la personne initiale.
+\sdl
+Il convient de donner une mesure de ressemblance entre deux personnes $i_1$ et $i_2$, que l'on notera $s\pp{i_0,\:j_0}$.
+Nous prendrons ici la valeur du cosinus de l'angle entre les deux personnes : \[
+	s\pp{i_1,\:i_2} = \max\pp{\frac{\tr{P_{i_1}}\!\cdot\!P_{i_2}}{\norme{P_{i_1}}{2}\norme{P_{i_2}}{2}},\:0}
+\]
+On prendra alors comme approximation : \[
+	\Apc{i}{j} = \frac{\underset{^{i_0\neq i}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i_0}{j}}}%
+				{\underset{^{i_0\neq i}}{\sum}s\pp{i_0,\:i}}
+\]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Décomposition en valeurs singulières}
+
+Le but est ici de faire apparaître $k$ modèles de personnes, dont toutes les autres seront des combinaisons linéaires.
+
+Autrement dit, on souhaite faire apparaître la matrice $\Ap$ de la manière suivante : \[
+	\Ap = P\cdot O
+\]
+avec $P \in \mathcal{M}_{n,\:k}\pp{\mathbb{R}}$ de colonnes libres que l'on peut prendre orthonormées et $O \in \mathcal{M}_{k,\:m}\pp{\mathbb{R}}$.
+
+On peut facilement accéder à une telle décomposition à l'aide de la décomposition en valeurs singulières.
+
+\sdl
+% vvvvvvvvvvvvvvvvvvvv %
+\begin{algorithm}[H]
+\KwData{La matrice $\B$ et un entier $k$.}
+\KwResult{La matrice approchée $\Ap$.}
+
+$\left[ U,\: S,\: V\right] \longleftarrow \mathrm{SVD}\pp{\B}$\;
+\For{$i\in\segint{k}{\mathrm{size}\pp{S}}$}{
+$S\left[i,\:i\right] \longleftarrow 0$\;
+}
+$\Ap \longleftarrow U S \tr{V}$\;
+\Return{$\Ap$}\;
+ \caption{Recommandation par décomposition en valeurs singulières}
+\end{algorithm}
+% ^^^^^^^^^^^^^^^^^^^^ %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
+\nocite{*}
+\bibliographystyle{alpha}
+\bibliography{bibliographie}
+
+\end{document}
