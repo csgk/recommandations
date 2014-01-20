@@ -7,6 +7,10 @@
 using namespace std;
 using namespace Eigen;
 
+/* ************************************************************************** */
+/* *****                     initialisation/erreur                      ***** */
+/* ************************************************************************** */
+
 MatrixXd *init_matrix(char *source_file, int rows, int columns, double number_of_entries) {
     std::fstream file;
 	file.open(source_file, fstream::in);
@@ -42,6 +46,8 @@ MatrixXd *init_matrix(char *source_file, int rows, int columns, double number_of
     
 }
 
+/* ************************************************************************** */
+
 float rmse(char *source_file, MatrixXd *data, int rows, int columns) {
     std::fstream file;
 	file.open(source_file, fstream::in);
@@ -69,6 +75,12 @@ float rmse(char *source_file, MatrixXd *data, int rows, int columns) {
 	return (sqrt(error)/n);
 
 }
+
+/* ************************************************************************** */
+/* *****                           ALGORITHMES                          ***** */
+/* ************************************************************************** */
+
+/* ********************************** 2  1 ********************************** */
 
 void average_algorithm(MatrixXd *data, int rows, int columns) {
     int card = 0;
@@ -107,6 +119,20 @@ void average_algorithm(MatrixXd *data, int rows, int columns) {
         }
     }
 }
+
+/* ********************************** 2  2 ********************************** */
+
+/* ********************************** 3  1 ********************************** */
+
+/* ********************************** 3  3 ********************************** */
+
+/* ********************************** 4    ********************************** */
+
+
+
+/* ************************************************************************** */
+/* *****                             MAIN                               ***** */
+/* ************************************************************************** */
 
 int main(int argc, char** argv) {
     char *source_file;
