@@ -169,9 +169,34 @@ Nous prendrons ici la valeur du cosinus de l'angle entre les deux personnes : \[
 	s\pp{i_1,\:i_2} = \max\pp{\frac{\tr{P_{i_1}}\!\cdot\!P_{i_2}}{\norme{P_{i_1}}{2}\norme{P_{i_2}}{2}},\:0}
 \]
 On prendra alors comme approximation : \[
-	\Apc{i}{j} = \frac{\underset{^{i_0\neq i}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i_0}{j}}}%
+	\Apc{i}{j} = \frac{\underset{^{i_0\neq i}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i}{j}}}%
 				{\underset{^{i_0\neq i}}{\sum}s\pp{i_0,\:i}}
 \]
+
+% vvvvvvvvvvvvvvvvvvvv %
+\begin{algorithm}[H]
+\KwData{La matrice $\B$ et un entier $k$.}
+\KwResult{La matrice approchée $\Ap$.}
+$S \longleftarrow B\tr{B}$\;
+\For{$i\in\segint{1}{n}$}{
+$n\left[i\right] \longleftarrow \norme{\B\ei{i}}{2}$
+}
+\For{$i\in\segint{1}{n}$}{
+\For{$k\in\segint{1}{n}$}{
+	$S\left[i,\: k\right] \longleftarrow S\left[i,\: k\right]/\pp{n\left[i\right].n\left[k\right]}$\;
+}}
+$\Ap \longleftarrow S.\B$\;
+$somme \longleftarrow S.(1)$\;
+\For{$i\in\segint{1}{n}$}{
+\For{$j\in\segint{1}{m}$}{
+	$A\left[i,\: j\right] \longleftarrow A\left[i,\: j\right]/
+		somme\left[i\right]$\;
+}}
+\Return{$\Ap$}\;
+ \caption{Minimisation par voisinage}
+
+\end{algorithm}
+% ^^^^^^^^^^^^^^^^^^^^ %
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%       %%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Décomposition en valeurs singulières}
