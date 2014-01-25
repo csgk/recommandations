@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include </usr/local/include/Eigen/Eigen>
+#include </usr/local/include/Eigen/SVD>
 #include <vector>
 #include <fstream>
 
@@ -22,11 +23,7 @@ MatrixXd *init_matrix(char *source_file, int rows, int columns, double number_of
     
     int i, j;
     MatrixXd *result = new MatrixXd(rows, columns);
-    for (i = 0; i<rows; ++i) {
-        for (j = 0; j<columns; ++j) {
-            (*result)(i, j) = 0;
-        }
-    }
+    *result = MatrixXd::Zero(rows, columns);
     
     float rate;
     
@@ -36,11 +33,18 @@ MatrixXd *init_matrix(char *source_file, int rows, int columns, double number_of
     while(!file.eof() && n<number_of_entries){
         stringstream line(buffer);
 		line >> i >> j >> rate;
-        (*result)(i, j) = rate;
+        (*result)(i-1, j-1) = rate;
         getline(file, buffer);
         n++;
     }
-    
+
+    //for (int i = 0; i < 100; ++i) {
+    //    for (int j = 0; j < 100; ++j) {
+      //      cout << (*data)(i,j) << " ";
+        //}
+        //cout << "\\" << endl;
+    //}
+
 	file.close();
 	return result;
     
@@ -72,7 +76,7 @@ float rmse(char *source_file, MatrixXd *data, int rows, int columns) {
     }
     
 	file.close();
-	return (sqrt(error)/n);
+	return (sqrt(error/n));
 
 }
 
@@ -101,20 +105,33 @@ void average_algorithm(MatrixXd *data, int rows, int columns) {
             p[i] += (*data)(i, j);
             if( 0 != (*data)(i, j) ){card++;}
         }
-        p[i] = (p[i]/card) - mean;
+        if(0==card){p[i] = 0;}
+        else{
+            p[i] = (p[i]/card) - mean;
+            cout << "p[" << i << "] == " << p[i] << "\t";
+        }
     }
     
+    cout << endl;
+    
+    cout << "columns == " << columns << endl;
     for (int j = 0; j<columns; ++j) {
         card = 0;
         for (int i = 0; i<rows; ++i) {
             o[j] += (*data)(i, j);
             if( 0 != (*data)(i, j) ){card++;}
         }
-        o[j] = (o[j]/card) - mean;
+        if(0==card){o[j] = 0;}
+        else{
+            o[j] = (o[j]/card) - mean;
+        }
+        cout << "card == " << card <<"\t";
+        cout << "o[" << j << "] == " << o[j] << endl;
     }
     
     for (int j = 0; j<columns; ++j) {
         for (int i = 0; i<rows; ++i) {
+            cout << "i == " << i << " j == " << j << endl;
             (*data)(i, j) = mean + p[i] + o[j];
         }
     }
@@ -126,9 +143,59 @@ void average_algorithm(MatrixXd *data, int rows, int columns) {
 
 /* ********************************** 3  3 ********************************** */
 
+void neighbourhood_minimisation_algorithm (MatrixXd *data) {
+    cout << "Comme ça va être beau ! *_*" << endl;
+    MatrixXd S = (*data) * data->transpose();
+    cout << "calcul de S fini" << endl;
+    int n = (int)S.cols();
+    vector<float> norm(n);
+    vector<float> sum(n);
+    for (int i = 0; i < n; ++i) {
+        norm[i] = data->col(i).norm();
+        if (0 == norm[i]) {
+            cout << "Bouhouhouhouhouhouhou " << i << endl;
+        }
+    }
+    cout << "calcul de norme fini" << endl;
+    for (int i = 0; i < n; ++i) {
+        sum[i] = 0;
+        for (int k = 0; k < n; ++k) {
+            S(i,k) /= norm[i]*norm[k];
+            sum[i] += abs(S(i,k));
+        }
+    }
+    cout << "calcul de somme fini" << endl;
+    *data = S * (*data);
+    for (int i = 0; i < n ; ++i) {
+        for (int j = 0; j < n; ++j) {
+            (*data)(i,j) /= sum[i];
+        }
+    }
+    cout << "calcul de Ap fini" << endl;
+    return;
+}
+
 /* ********************************** 4    ********************************** */
 
-
+void singular_values_algorithm(MatrixXd *data, int model_number) {
+    JacobiSVD<MatrixXd> svd(*data, ComputeFullU | ComputeFullV);
+    cout << "j'ai calculé la SVD ! #swag" << endl;
+    cout << "je calcule ma nouvelle matrice... #suspens" << endl;
+    cout << "je calcule U ! #fuckU" << endl;
+    MatrixXd U = svd.matrixU();
+    cout << "ma taille est " << U.rows() << " " << U.cols() << endl;
+    cout << "je calcule V^T ! #vitessegrandV" << endl;
+    MatrixXd VT = svd.matrixV().transpose();
+    cout << "ma taille est " << VT.rows() << " " << VT.cols() << endl;
+    cout << "je fais du produit de matrices !" << endl;
+    MatrixXd S = MatrixXd::Zero(U.cols(), VT.rows());
+    for (int i = 0; i<model_number; ++i) {
+        S(i,i)=svd.singularValues()[i];
+        cout << S(i,i) << " ";
+    }
+    *data =  U * S * VT;
+    cout << "J'ai ma nouvelle matrice, trop bien ! #YOLO" << endl;
+}
 
 /* ************************************************************************** */
 /* *****                             MAIN                               ***** */
@@ -160,7 +227,24 @@ int main(int argc, char** argv) {
     }
     
     MatrixXd *data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
+    
+    cout << "j'ai initialisé la matrice, youpi ! #joie" << endl;
+    cout << "Je fais avec l'algorithme moyen #pipeau" << endl;
 
     average_algorithm(data_matrix, rows, columns);
+
+    cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrix, rows, columns) << endl;
+    cout << "Je recommence #mammamia" << endl;
+    
+    data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
+
+    neighbourhood_minimisation_algorithm(data_matrix);
+    
+    cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrix, rows, columns) << endl;
+
+    cout << "et on recommence ! #lavieestbelle";
+    data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
+    
+    singular_values_algorithm(data_matrix, 50);
     cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrix, rows, columns) << endl;
 }
