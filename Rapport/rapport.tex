@@ -32,7 +32,7 @@
 \newcommand{\segint}[2]{\left[\!\left[#1,\: #2\right]\!\right]} % Trace
 \newcommand{\ei}[1]{\mathrm{e}_i} % Vecteur de base
 
-%raccoursis
+%raccourcis
 \newcommand{\pp}[1]{\left(#1\right)} % parenthèses
 \newcommand{\sdl}{
 
@@ -151,7 +151,7 @@ lorsque $\mu$ est suffisamment proche de $0$.
 \KwResult{une meilleur approximation $x$.}
 
 \For{$k\in\segint{1}{N}$}{
-$x\longleftarrow x - \mu.\tr{M}\pp{Mx-b}$\;
+$x\longleftarrow x - \mu.\tr{M}\pp{Mx+b}$\;
 	\tcc{Seuillage doux sur chaque composante}
 \For{$i\in\segint{1}{n}$}{
 $x\left[i\right]\longleftarrow \mathrm{signe}\pp{x\left[i\right]}.\max\pp{\:\left|x\left[i\right]\right| - \mu\lambda,\:0\:}$\;
@@ -214,23 +214,23 @@ la valeur du cosinus de l'angle entre les deux personnes : \[
 	s\pp{i_1,\:i_2} = \frac{\tr{P_{i_1}}\!\cdot\!P_{i_2}}{\norme{P_{i_1}}{2}\norme{P_{i_2}}{2}}.
 \]
 On prendra alors comme approximation : \[
-	\Apc{i}{j} = \frac{\underset{^{i_0}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i}{j}}}%
-				{\underset{^{i_0}}{\sum}\left|s\pp{i_0,\:i}\right|}.
+	\Apc{i_0}{j} = \frac{\underset{^{i}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i}{j}}}%
+				{\underset{^{i}}{\sum}\left|s\pp{i_0,\:i}\right|}.
 \]
 
 % vvvvvvvvvvvvvvvvvvvv %
 \begin{algorithm}[H]
-\KwData{La matrice $\B$ et un entier $k$.}
+\KwData{La matrice $\B$.}
 \KwResult{La matrice approchée $\Ap$.}
 $S \longleftarrow B\tr{B}$\;
 \For{$i\in\segint{1}{n}$}{
-$n\left[i\right] \longleftarrow \norme{\B\ei{i}}{2}$
+$norm\left[i\right] \longleftarrow \norme{\tr{\B}\ei{i}}{2}$
 }
 \For{$i\in\segint{1}{n}$}{
 $somme\left[i\right] \longleftarrow 0$\;
 \For{$k\in\segint{1}{n}$}{
-	$S\left[i,\: k\right] \longleftarrow S\left[i,\: k\right]/\pp{n\left[i\right].n\left[k\right]}$\;
-$somme\left[i\right] \longleftarrow somme\left[i\right] + S\left[i,\: k\right]$\;
+	$S\left[i,\: k\right] \longleftarrow S\left[i,\: k\right]/\pp{norm\left[i\right].norm\left[k\right]}$\;
+$somme\left[i\right] \longleftarrow somme\left[i\right] + \left|S\left[i,\: k\right]\right|$\;
 }}
 $\Ap \longleftarrow S.\B$\;
 \For{$i\in\segint{1}{n}$}{

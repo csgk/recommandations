@@ -1,0 +1,10 @@
+\select@language {french}
+\contentsline {section}{\numberline {1}Introduction}{2}
+\contentsline {section}{\numberline {2}Approximation basique}{2}
+\contentsline {subsection}{\numberline {2.1}Par moyenne}{2}
+\contentsline {subsection}{\numberline {2.2}Par minimisation de probl\IeC {\`e}me convexe}{3}
+\contentsline {section}{\numberline {3}Approximation par voisinage}{4}
+\contentsline {subsection}{\numberline {3.1}Plus proche voisin}{4}
+\contentsline {subsection}{\numberline {3.2}$k$-plus proches voisins}{4}
+\contentsline {subsection}{\numberline {3.3}Voisinage}{4}
+\contentsline {section}{\numberline {4}D\IeC {\'e}composition en valeurs singuli\IeC {\`e}res}{5}
