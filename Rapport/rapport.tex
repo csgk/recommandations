@@ -38,7 +38,7 @@
 
 ~
 
-} % saute de line
+} % saut de ligne
 %%%%%%%%%%%%%%%%%%%%%%%%%% Notations %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
@@ -71,12 +71,12 @@ la matrice des notes.
 On suppose ici que l'on n'a accès qu'à une matrice incomplète $\B$ obtenue
 en annulant certaines composantes de $A$. Le but est alors de trouver
 une bonne approximation $\Ap$ de $A$ à partir de $\B$.
-
 \sdl
 
 On prendra comme mesure d'approximation, l'erreur moyenne suivante~: \[
-	\rmse{\Ap} = \frac{\norme{A-\Ap}{2}}{\sqrt{n.m}} = \sqrt{\frac{\sum_{i,j} \pp{\Ac{i}{j} - \Apc{i}{j}}^2}{n.m}}.
+	\rmse{\Ap} = \sqrt{\frac{\sum_{i,j \in S} \pp{\Ac{i}{j} - \Apc{i}{j}}^2}{\mathrm{Card}\pp{S}}}
 \]
+où $S$ dont les éléments correspondent aux composantes oubliées dans la matrice $\A$.
 
 En pratique, les données que l'on utilisera pour tester les algorithmes
 correspondront à des matrices $\A$ incomplètes, et on utilisera
@@ -170,7 +170,7 @@ représentant la personne $i$ et $O_j$ la $j$-ième colonne de $\B$,
 représentant l'objet $j$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Plus proche voisin}
+\subsection{Plus proches voisins}
 
 La méthode précédente suppose qu'il n'existe qu'un seul type de personne
 et d'objet : un objet est bien ou mauvais dans l'ensemble et une
@@ -180,44 +180,51 @@ mauvaises. Ceci apparaît comme très naïf.
 
 On considère ici une méthode différente. Pour une personne $i$ et
 un objet $j$ dont l'information est manquante, nous allons chercher
-parmi les personnes ayant noté $j$ celui qui se rapproche le plus
-$i$ ainsi que l'objet ayant été noté par $i$ celui qui se rapproche
-le plus de $j$. En notant $i_0$ et $j_0$ respectivement la personne
-et l'objet trouvés, on peut alors prendre comme approximation la
-moyenne des deux notes : $\Apc{i}{j} = \frac{1}{2}\pp{\Ac{i_0}{j} + \Ac{i}{j_0}}$.
+parmi les personnes ayant noté $j$ les $k$ qui se rapprochent le plus
+$i$. En notant $S$ les indices de ces personnes,
+on peut alors prendre comme approximation la
+moyenne pondérée des notes~: \[
+	\Apc{i_0}{j} = \frac{\underset{^{i \in S}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i}{j}}}%
+				{\underset{^{i \in S}}{\sum}\left|s\pp{i_0,\:i}\right|}. \]
 
-\sdl
-Il reste à définir comment sélectionner le plus proche voisin.
+Où $s(i,j)$ correspond à la distance entre deux personnes et représente leur ressemblance. Il reste à définir une distance pour sélectionner le plus proche voisin.
 Si on cherche le plus proche voisin d'un vecteur $X$ de support
-$S$ parmi un ensemble de vecteurs $E$, on considérera $E_{|S}$
-les vecteurs de $E$ projetés sur le support $S$ et on prendra alors
+$S$ parmi un ensemble de vecteurs $E$, on pourrait considérer $E_{|S}$
+les vecteurs de $E$ projetés sur le support $S$ et on prendrait alors
 le plus proche voisin pour la norme euclidienne sur
 $\mathbb{R}^{\mathrm{Card}\pp{S}}$.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{$k$-plus proches voisins}
-
-On peut vouloir effectuer l'algorithme précédent en moyennant les
-notes des $k$-plus proches voisins. L'algorithme est en tout point
-semblable au précédent.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Voisinage}
-
-On ne cherche plus ici le plus proche voisin, mais une combinaison
-de la note donnée par les personne ayant noté l'objet en question,
-et ce en fonction de leur ressemblance avec la personne initiale.
-\sdl
-Il convient de donner une mesure de ressemblance entre deux personnes
-$i_1$ et $i_2$, que l'on notera $s\pp{i_1,\:i_2}$. Nous prendrons ici
-la valeur du cosinus de l'angle entre les deux personnes : \[
+Nous prendrons ici
+la valeur du cosinus de l'angle entre les deux personnes~: \[
 	s\pp{i_1,\:i_2} = \frac{\tr{P_{i_1}}\!\cdot\!P_{i_2}}{\norme{P_{i_1}}{2}\norme{P_{i_2}}{2}}.
 \]
-On prendra alors comme approximation : \[
-	\Apc{i_0}{j} = \frac{\underset{^{i}}{\sum}\pp{ s\pp{i_0,\:i}\!\cdot\!\Bc{i}{j}}}%
-				{\underset{^{i}}{\sum}\left|s\pp{i_0,\:i}\right|}.
-\]
 
+\begin{algorithm}[H]
+\KwData{La matrice $\B$ et le nombre $k$ de voisins pris en compte.}
+\KwResult{La matrice approchée $\Ap$.}
+
+calcul des $s(i_1,i_2)$\;
+\For{$i\in\segint{1}{n}$}{
+\For{$j\in\segint{1}{m}$}{
+ $S \longleftarrow$ indices des $k$-plus proches voisins de $i$ ayant noté $j$ \;
+ 	$\Apc{i}{j} \longleftarrow {\underset{^{t \in S}}{\sum}\pp{ s\pp{i,\:t}\!\cdot\!\Bc{t}{j}}}/
+				{\underset{^{t \in S}}{\sum}\left|s\pp{i,\:t}\right|}$\;
+}
+}
+
+\Return{$\Ap$}\;
+
+\caption{Recommandation par $k$-plus proches voisins}
+
+\end{algorithm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Implantation matricielle pour $k = n$}
+
+Dans le cas où $k = n$, les calculs peuvent s'effectuer plus efficacement à l'aide de calculs matriciels.
+On pourra considérer l'algorithme suivant~:
+
+\sdl
 % vvvvvvvvvvvvvvvvvvvv %
 \begin{algorithm}[H]
 \KwData{La matrice $\B$.}
@@ -239,7 +246,7 @@ $\Ap \longleftarrow S.\B$\;
 		somme\left[i\right]$\;
 }}
 \Return{$\Ap$}\;
- \caption{Minimisation par voisinage}
+ \caption{Recommandation par voisinage}
 
 \end{algorithm}
 % ^^^^^^^^^^^^^^^^^^^^ %
