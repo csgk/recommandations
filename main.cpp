@@ -3,6 +3,7 @@
 #include </usr/local/include/Eigen/Eigen>
 #include </usr/local/include/Eigen/SVD>
 #include <vector>
+#include <list>
 #include <fstream>
 
 using namespace std;
@@ -11,6 +12,7 @@ using namespace Eigen;
 /* ************************************************************************** */
 /* *****                     initialisation/erreur                      ***** */
 /* ************************************************************************** */
+
 
 MatrixXd *init_matrix(char *source_file, int rows, int columns, long number_of_entries) {
     std::fstream file;
@@ -41,13 +43,6 @@ MatrixXd *init_matrix(char *source_file, int rows, int columns, long number_of_e
         n++;
     }
 
-    //for (int i = 0; i < 100; ++i) {
-    //    for (int j = 0; j < 100; ++j) {
-      //      cout << (*data)(i,j) << " ";
-        //}
-        //cout << "\\" << endl;
-    //}
-
 	file.close();
 	return result;
     
@@ -56,6 +51,7 @@ MatrixXd *init_matrix(char *source_file, int rows, int columns, long number_of_e
 /* ************************************************************************** */
 
 void print_matrix(int rows, int columns, MatrixXd *data) {
+    return;
     cout << endl << endl;
     for (int i=0; i<rows; ++i) {
         for (int j=0; j<columns; ++j) {
@@ -68,7 +64,7 @@ void print_matrix(int rows, int columns, MatrixXd *data) {
 
 /* ************************************************************************** */
 
-float rmse(char *source_file, MatrixXd *data, int rows, int columns, double number_of_entries) {
+float rmse(char *source_file, MatrixXd *data, int rows, int columns, int number_of_entries, bool profil) {
     std::fstream file;
 	file.open(source_file, fstream::in);
 
@@ -79,25 +75,72 @@ float rmse(char *source_file, MatrixXd *data, int rows, int columns, double numb
     int i, j, card = 0;
     float rate, error = 0;
     
+    vector<int> object_number(rows,0);
+    vector<int> person_number(columns,0);
+    
+    list<int> real_values_i;
+    list<int> real_values_j;
+    list<float> real_values_rate;
+    
 	string buffer;
     getline(file, buffer);
     int n = 1;
-
+    
     while(!file.eof()){
+        stringstream line(buffer);
+        line >> i >> j >> rate;
         if (n == number_of_entries) {
-            stringstream line(buffer);
-            line >> i >> j >> rate;
-            error += pow(
-                         max(min((*data)(i-1, j-1),5.),0.) 	- rate,
-                         2);
+            real_values_i.push_front(i-1);
+            real_values_j.push_front(j-1);
+            real_values_rate.push_front(rate);
             n=0;
             ++card;
+        }
+        else {
+            object_number[i-1]++;
+            person_number[j-1]++;
         }
         getline(file, buffer);
         n++;
     }
+
+    file.close();
+
+    vector<float> object_error(rows,0);
+    vector<float> person_error(columns,0);
     
-	file.close();
+    vector<int> object_card(rows,0);
+    vector<int> person_card(columns,0);
+
+     while (! real_values_i.empty()) {
+        i = real_values_i.front();
+        j = real_values_j.front();
+        rate = real_values_rate.front();
+        object_card[object_number[i]]++;
+        person_card[person_number[j]]++;
+        object_error[object_number[i]] += pow(max(min((*data)(i, j),5.),0.) - rate, 2.);
+        person_error[person_number[j]] += pow(max(min((*data)(i, j),5.),0.) - rate, 2.);
+        error += pow(max(min((*data)(i, j),5.),0.) 	- rate, 2.);
+        real_values_i.pop_front();
+        real_values_j.pop_front();
+        real_values_rate.pop_front();
+    }
+    
+    if (profil) {
+
+    cout << "profilage de l'erreur en fonction du nombre de notes par objet" << endl;
+    for (i = 0; i < object_error.size() ; ++i) {
+        cout << i << "\t" << sqrt(object_error[i]/(float)object_card[i]) << endl;
+    }
+    cout << endl;
+
+    cout << "profilage de l'erreur en fonction du nombre de notes par personne" << endl;
+    for (j = 0; j < person_error.size() ; ++j) {
+        cout << j << "\t" << sqrt(person_error[j]/(float)person_card[j]) << endl;
+    }
+
+    cout << endl;
+    }
 	return (sqrt(error/card));
 
 }
@@ -130,13 +173,10 @@ void average_algorithm(MatrixXd *data, int rows, int columns) {
         if(0==card){p[i] = 0;}
         else{
             p[i] = (p[i]/card) - mean;
-//            cout << "p[" << i << "] == " << p[i] << "\t";
         }
     }
     
-    cout << endl;
     
-    cout << "columns == " << columns << endl;
     for (int j = 0; j<columns; ++j) {
         card = 0;
         for (int i = 0; i<rows; ++i) {
@@ -147,12 +187,9 @@ void average_algorithm(MatrixXd *data, int rows, int columns) {
         else{
             o[j] = (o[j]/card) - mean;
         }
-  //      cout << "card == " << card <<"\t";
- //       cout << "o[" << j << "] == " << o[j] << endl;
     }
     for (int j = 0; j<columns; ++j) {
         for (int i = 0; i<rows; ++i) {
- //           cout << "i == " << i << " j == " << j << endl;
             (*data)(i, j) = mean + p[i] + o[j];
         }
     }
@@ -183,13 +220,9 @@ void convex_minimisation_algorithm(MatrixXd *data, int rows, int columns, int it
         if(0==card){sum_a_rows[i] = 0;}
         else{
             p[i] = (sum_a_rows[i]/card) - mean;
-            //            cout << "p[" << i << "] == " << p[i] << "\t";
         }
     }
     
-    //cout << endl;
-    
-    //cout << "columns == " << columns << endl;
     for (int j = 0; j<columns; ++j) {
         card = 0;
         for (int i = 0; i<rows; ++i) {
@@ -208,7 +241,7 @@ void convex_minimisation_algorithm(MatrixXd *data, int rows, int columns, int it
     for (int i = 0; i<rows; ++i) {for (int j = 0; j<columns; ++j) {
         erreur += pow((*data)(i,j) - mean + p[i] + o[j], 2.);
     }}
-    cout << "0 : err = " << erreur << endl;
+    //cout << "0 : err = " << erreur << endl;
         
     float sum_o, sum_p;
     for (int k=0; k<iter_number; ++k) {
@@ -234,10 +267,9 @@ void convex_minimisation_algorithm(MatrixXd *data, int rows, int columns, int it
         for (int i = 0; i<rows; ++i) {for (int j = 0; j<columns; ++j) {
             erreur += pow((*data)(i,j) - mean + p[i] + o[j], 2.);
         }}
-        cout << k << " : err = " << erreur << endl;
+       // cout << k << " : err = " << erreur << endl;
 
     }
-//    cout << p[0] << endl;
     for (int j = 0; j<columns; ++j) {
         for (int i = 0; i<rows; ++i) {
             (*data)(i, j) = mean + p[i] + o[j];
@@ -300,20 +332,15 @@ MatrixXd* neighbourhood_k_algorithm (MatrixXd* data, int k) {
         for (int j = 0; j < m; ++j) {
             value = sum = 0;
             count = 0;
-//            cout << "\ni,j = " <<i<< " "<<j << endl;
             for (int ii = 0; ii<n && count<k; ++ii) {
-//              cout << "rank(ii)" << rank[ii] << " data= " << (*data)(rank[ii],j)<< endl;
                 if ((*data)(rank[ii],j) != 0) {
                     count++;
                     sum += abs( S(rank[ii],i) );
                     value += S(i,rank[ii]) * (*data)(rank[ii],j);
-//                    cout << "v " << value << " = bis + " << S(rank[ii],i) * (*data)(rank[ii],j) << endl;
-//                    cout << "s " << sum << " = bis + " << abs(S(rank[ii],i)) << endl;
                 }
             }
-            if (0==count) {(*result)(i,j) = mean;}
-            else {(*result)(i,j) = value / sum;}
-//            cout << "i,j = " << i << " " << j << " count : " << count << " => valeur = " << value << "/" << sum << " = " << (*result)(i,j) << endl;;
+            if ( 0==count || 0==sum ) {(*result)(i,j) = mean;}
+            else{(*result)(i,j) = value / sum;}
         }
     }
     return result;
@@ -341,7 +368,6 @@ void neighbourhood_minimisation_algorithm (MatrixXd *data) {
     for (int i = 0; i < n; ++i) {
         norm[i] = data->row(i).norm();
     }
-//    cout << "calcul de norme fini" << endl;
     for (int i = 0; i < n; ++i) {
         for (int k = 0; k < n; ++k) {
             S(i,k) /= norm[i]*norm[k];
@@ -357,13 +383,10 @@ void neighbourhood_minimisation_algorithm (MatrixXd *data) {
         for (int j = 0; j < m; ++j) {
             if (0 == sum(i,j)) {
                 (*data)(i,j) = mean;
-//                cout << " i,j = " << i << " " << j << " : " << (*data)(i,j) << " COUNT = 0" << endl;
             }
             else {
-//                cout << " i,j = " << i << " " << j << " : " << M(i,j) << "/" << sum(i,j) << endl;
                 (*data)(i,j) = M(i,j) / sum(i,j);
             }
-            //cout << "pourquoi (" << i << ", " << j << ") vaut " << (*data)(i,j) << endl;
         }
     }
     return;
@@ -373,40 +396,34 @@ void neighbourhood_minimisation_algorithm (MatrixXd *data) {
 
 void singular_values_algorithm(MatrixXd *data, int model_number) {
     JacobiSVD<MatrixXd> svd(*data, ComputeThinU | ComputeThinV);
-  //  cout << "j'ai calculé la SVD ! #swag" << endl;
-  //  cout << "je calcule ma nouvelle matrice... #suspens" << endl;
-  //  cout << "je calcule U ! #fuckU" << endl;
     MatrixXd U = svd.matrixU();
-  //  cout << "ma taille est " << U.rows() << " " << U.cols() << endl;
-  //  cout << "je calcule V^T ! #vitessegrandV" << endl;
     MatrixXd VT = svd.matrixV().transpose();
-  //  cout << "ma taille est " << VT.rows() << " " << VT.cols() << endl;
-  //  cout << "je fais du produit de matrices !" << endl;
     MatrixXd S = MatrixXd::Zero(U.cols(), VT.rows());
     for (int i = 0; i<model_number; ++i) {
         S(i,i)=svd.singularValues()[i];
-        cout << S(i,i) << " ";
+    //    cout << S(i,i) << " ";
     }
     *data =  U * S * VT;
-    cout << "J'ai ma nouvelle matrice, trop bien ! #YOLO" << endl;
 }
 
 /* ************************************************************************** */
 /* *****                             MAIN                               ***** */
 /* ************************************************************************** */
 
+
 int main(int argc, char** argv) {
     char *source_file;
     int rows, columns;
-    long number_of_entries;
+    int number_of_entries;
     
     if (argc < 2) {
         std::cout << "No imput argument" <<std::endl;
         exit (0);
     }
     
-    // -input-file u.data -persons 943 -objects 1682 -entries 80000
-    int svd_n = 10, iterconv = 100, neighk = 5;
+    bool profil = false;
+    int svd_n = 10, neighk = 50;
+    float conv = 10000.;
     for (int i=1; i<argc; ++i) {
         if (0 == strcmp(argv[i], "-input-file")) {
             source_file = argv[++i];
@@ -423,13 +440,15 @@ int main(int argc, char** argv) {
         else if (0 == strcmp(argv[i], "-svd")) {
             svd_n = atoi(argv[++i]);
         }
-        else if (0 == strcmp(argv[i], "-iterconvex")) {
-            iterconv = atoi(argv[++i]);
+        else if (0 == strcmp(argv[i], "-convex")) {
+            conv = atoi(argv[++i]);
         }
         else if (0 == strcmp(argv[i], "-neighb")) {
             neighk = atoi(argv[++i]);
         }
-        
+        else if (0 == strcmp(argv[i], "--details")) {
+            profil = true;
+        }
     }
 
     
@@ -439,35 +458,36 @@ int main(int argc, char** argv) {
 
     average_algorithm(data_matrix, rows, columns);
     print_matrix(rows, columns, data_matrix);
-    cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries) << endl;
+    cout << "On trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries, profil) << endl;
     
     cout << "---------------------------------- ALGORITHME 1 2 ----------------------------------" << endl;
     data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
     
-    convex_minimisation_algorithm(data_matrix, rows, columns, iterconv, 1., 1./(rows+columns));
+    convex_minimisation_algorithm(data_matrix, rows, columns, 100, conv, 1./(rows+columns));
     print_matrix(rows, columns, data_matrix);
-    cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries) << endl;
+    cout << "On trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries, profil) << endl;
 
     
     cout << "---------------------------------- ALGORITHME 3 1 ----------------------------------" << endl;
     data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
     data_matrix = neighbourhood_k_algorithm(data_matrix, neighk);
     print_matrix(rows, columns, data_matrix);
-    cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries) << endl;
+    cout << "On trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries, profil) << endl;
     
     cout << "---------------------------------- ALGORITHME 3 3 ----------------------------------" << endl;
-    MatrixXd *data_matrixm = init_matrix(source_file, rows, columns, number_of_entries);
+    data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
     
-    neighbourhood_minimisation_algorithm(data_matrixm);
-    print_matrix(rows, columns, data_matrixm);
-    cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrixm, rows, columns, number_of_entries) << endl;
+    neighbourhood_minimisation_algorithm(data_matrix);
+    print_matrix(rows, columns, data_matrix);
+    cout << "On trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries, profil) << endl;
     
     cout << "---------------------------------- ALGORITHME 4   ----------------------------------" << endl;
     data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
     singular_values_algorithm(data_matrix, svd_n);
     print_matrix(rows, columns, data_matrix);
-    cout << ":-) Wouhou, on trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries) << endl;
+    cout << "On trouve : " << rmse(source_file, data_matrix, rows, columns, number_of_entries, profil) << endl;
     
+    /*
     cout << "----------------------------------    MATRICE     ----------------------------------" << endl;
     data_matrix = init_matrix(source_file, rows, columns, number_of_entries);
     print_matrix(rows, columns, data_matrix);
@@ -475,5 +495,6 @@ int main(int argc, char** argv) {
     cout << "---------------------------------- VRAIE  MATRICE ----------------------------------" << endl;
     data_matrix = init_matrix(source_file, rows, columns, rows*columns+1);
     print_matrix(rows, columns, data_matrix);
+     */
 
 }
